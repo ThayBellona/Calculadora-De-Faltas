@@ -107,7 +107,18 @@
 
     function calcular() {
       const linhas = tabela.querySelectorAll("tr");
-      const calendario = JSON.parse(localStorage.getItem("calendario")) || {};
+
+      // Pega calendário direto do DOM (modo edição também)
+      const calendario = {};
+      document.querySelectorAll(".day").forEach(day => {
+        const diaNome = day.querySelector("strong").textContent;
+        const aulas = day.querySelectorAll(".class");
+        calendario[diaNome] = Array.from(aulas).map(aula => ({
+          materia: aula.querySelector("span:first-child").textContent.trim(),
+          faltasDia: parseInt(aula.querySelector("span:nth-child(2)").textContent) || 0
+        }));
+      });
+
       let mensagens = [];
 
       linhas.forEach(linha=>{
@@ -184,7 +195,10 @@
       setCalendarioModoEdicao(calendarioEditavel);
       document.getElementById("editarCalendarioBtn").textContent =
         calendarioEditavel?"💾 Salvar Calendário":"✏️ Editar Calendário";
-      if(!calendarioEditavel) salvarCalendario();
+      if(!calendarioEditavel) {
+        salvarCalendario();
+        calcular(); // recalcula avisos ao salvar
+      }
     }
 
     function setCalendarioModoEdicao(editavel){
@@ -235,4 +249,3 @@
   </script>
 </body>
 </html>
-
