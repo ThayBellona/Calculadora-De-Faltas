@@ -44,6 +44,9 @@ th {
   color: white;
   text-transform: uppercase;
   font-size: 0.85rem;
+  /* --- MUDANÇA IMPORTANTE --- */
+  /* Impede que o cabeçalho quebre linha (ex: "Máx. Permitidas") */
+  white-space: nowrap;
 }
 
 input {
@@ -158,16 +161,26 @@ footer {
 
 /* 📱 Responsividade */
 @media (max-width: 768px) {
+  
+  /* --- AQUI ESTÁ A CORREÇÃO --- */
   table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-    border-radius: 10px;
+    display: block; /* Faz a tabela se comportar como um bloco */
+    overflow-x: auto; /* Adiciona a rolagem horizontal */
+    white-space: nowrap; /* Garante que o conteúdo da tabela não quebre linha */
+    border-radius: 10px; /* Mantém o border-radius */
   }
 
   th, td {
     padding: 8px;
     font-size: 0.8rem;
+    /* Remove o white-space:nowrap das células para permitir quebra de linha se necessário, 
+       mas o 'th' (cabeçalho) continuará sem quebra de linha (definido acima) */
+    white-space: normal; 
+  }
+  
+  /* Garante que o cabeçalho não quebre linha mesmo aqui */
+  th {
+    white-space: nowrap;
   }
 
   input {
@@ -203,10 +216,6 @@ footer {
 @media (max-width: 480px) {
   h1 {
     font-size: 1.3rem;
-  }
-
-  table {
-    width: 100%;
   }
 
   .day strong {
