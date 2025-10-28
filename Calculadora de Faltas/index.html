@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Faltas - Thay Bellona</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <h1>📘 Calculadora de Faltas - 4º Período</h1>
+  <!-- COLUNAS CALCULADORA !-->
+
+  <table id="tabela">
+    <thead>
+      <tr>
+        <th>Disciplina</th>
+        <th>Total de Aulas</th>
+        <th>Faltas Atuais</th>
+        <th>Máx. Permitidas</th>
+        <th>Restantes</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div>
+    <button onclick="adicionarMateria()">➕ Adicionar Matéria</button>
+    <button onclick="calcular()">🔄 Calcular</button>
+  </div>
+
+  <div id="avisos" class="avisos"></div>
+
+  <!-- TABELA DE AULAS !-->
+  <div class="calendar">
+    <h2>🗓️ Aulas do 4º Período</h2>
+    <div class="day">
+      <strong>Segunda-feira</strong>
+      <div class="class"><span>Marlon Teixeira - Programação Web I</span><span>3 faltas</span></div>
+      <div class="class"><span>William Bessa - Interação Homem Computador</span><span>2 faltas</span></div>
+    </div>
+    <div class="day">
+      <strong>Terça-feira</strong>
+      <div class="class"><span>Henrique Canizo - Empreendedorismo</span><span>3 faltas</span></div>
+      <div class="class"><span>Ari Palu - Redes de Computadores II</span><span>2 faltas</span></div>
+    </div>
+    <div class="day">
+      <strong>Quarta-feira</strong>
+      <div class="class"><span>Flavio Farias - Comércio Eletrônico</span><span>3 faltas</span></div>
+      <div class="class"><span>Tania Facanha - Informática e Sociedade</span><span>2 faltas</span></div>
+    </div>
+    <div class="day">
+      <strong>Quinta-feira</strong>
+      <div class="class"><span>Marlon Teixeira - Programação Web I</span><span>3 faltas</span></div>
+      <div class="class"><span>Gustavo Cardial - Segurança da Informação</span><span>2 faltas</span></div>
+    </div>
+    <div class="day">
+      <strong>Sexta-feira</strong>
+      <div class="class"><span>Gustavo Cardial - Segurança da Informação</span><span>2 faltas</span></div>
+      <div class="class"><span>William Bessa - Interação Homem Computador</span><span>1 falta</span></div>
+      <div class="class"><span>Ari Palu - Redes de Computadores II</span><span>2 faltas</span></div>
+    </div>
+  </div>
+
+  <footer>© 2025 - Calculadora de Faltas feita por Thay Bellona 💜</footer>
+
+  <script>
+    const tabela = document.querySelector("#tabela tbody");
+    const avisos = document.getElementById("avisos");
+
+    const aulasSemana = {
+      "Segunda-feira": [
+        { materia: "Programação Web I", faltasDia: 3 },
+        { materia: "Interação Homem-Computador", faltasDia: 2 }
+      ],
+      "Terça-feira": [
+        { materia: "Empreendedorismo", faltasDia: 3 },
+        { materia: "Redes de Computadores II", faltasDia: 2 }
+      ],
+      "Quarta-feira": [
+        { materia: "Comércio Eletrônico", faltasDia: 3 },
+        { materia: "Informática e Sociedade", faltasDia: 2 }
+      ],
+      "Quinta-feira": [
+        { materia: "Programação Web I", faltasDia: 3 },
+        { materia: "Segurança da Informação", faltasDia: 2 }
+      ],
+      "Sexta-feira": [
+        { materia: "Segurança da Informação", faltasDia: 2 },
+        { materia: "Interação Homem-Computador", faltasDia: 1 },
+        { materia: "Redes de Computadores II", faltasDia: 2 }
+      ]
+    };
+
+    window.onload = () => {
+      const salvo = JSON.parse(localStorage.getItem("materias")) || [
+        { nome: "Comércio Eletrônico", total: 54, faltas: 0 },
+        { nome: "Empreendedorismo", total: 54, faltas: 0 },
+        { nome: "Informática e Sociedade", total: 36, faltas: 0 },
+        { nome: "Interação Homem-Computador", total: 72, faltas: 0 },
+        { nome: "Programação Web I", total: 108, faltas: 0 },
+        { nome: "Redes de Computadores II", total: 72, faltas: 0 },
+        { nome: "Segurança da Informação", total: 72, faltas: 0 }
+      ];
+      salvo.forEach(adicionarLinha);
+      calcular();
+    };
+
+    function adicionarLinha(materia) {
+      const linha = document.createElement("tr");
+      linha.innerHTML = `
+        <td contenteditable="true">${materia.nome}</td>
+        <td><input type="number" value="${materia.total}"></td>
+        <td><input type="number" value="${materia.faltas}"></td>
+        <td>—</td>
+        <td>—</td>
+        <td><button class="remove-btn" onclick="removerMateria(this)">🗑️</button></td>
+      `;
+      tabela.appendChild(linha);
+    }
+
+    function adicionarMateria() {
+      adicionarLinha({ nome: "Nova Matéria", total: 0, faltas: 0 });
+      salvar();
+    }
+
+    function removerMateria(botao) {
+      botao.closest("tr").remove();
+      salvar();
+    }
+
+    function calcular() {
+      const linhas = tabela.querySelectorAll("tr");
+      const materias = [];
+      let mensagens = [];
+
+      linhas.forEach(linha => {
+        const nome = linha.children[0].textContent.trim();
+        const total = parseFloat(linha.children[1].children[0].value) || 0;
+        const faltas = parseFloat(linha.children[2].children[0].value) || 0;
+        const maxPermitidas = Math.floor(total * 0.25);
+        const restantes = maxPermitidas - faltas;
+
+        linha.children[3].textContent = maxPermitidas;
+        linha.children[4].textContent =
+          restantes >= 0 ? restantes : "⚠️ Reprovado por falta";
+        linha.children[4].classList.toggle("alerta", restantes < 0);
+
+        materias.push({ nome, faltas, total, restantes });
+
+        // AVISO DE FALTAS
+        for (const [dia, aulas] of Object.entries(aulasSemana)) {
+          aulas.forEach(aula => {
+            if (aula.materia === nome) {
+              if (restantes - 1 <= aula.faltasDia) {
+                mensagens.push(`⚠️ Cuidado! Se faltar na ${dia}, você chegará ao limite de faltas em "${nome}" e não poderá mais faltar.`);
+              }
+            }
+          });
+        }
+      });
+
+      avisos.innerHTML = mensagens.join("<br>");
+      avisos.style.display = mensagens.length > 0 ? "block" : "none";
+
+      salvar();
+    }
+
+    function salvar() {
+      const linhas = tabela.querySelectorAll("tr");
+      const materias = Array.from(linhas).map(linha => ({
+        nome: linha.children[0].textContent,
+        total: linha.children[1].children[0].value,
+        faltas: linha.children[2].children[0].value
+      }));
+      localStorage.setItem("materias", JSON.stringify(materias));
+    }
+
+    tabela.addEventListener("input", salvar);
+  </script>
+</body>
+</html>
