@@ -2,20 +2,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg-site: #e8eef2; /* Fundo claro e agradável */
-    --board-frame: #64748b; /* Cinza metálico do quadro */
+    --bg-site: #e8eef2;
+    --board-frame: #64748b;
     --primary: #2563eb;
     --text-dark: #1e293b;
     --danger: #ef4444;
     --danger-bg: #fee2e2;
     
     /* Cores das folhas de caderno */
-    --paper-1: #fef9c3; /* Amarelo */
-    --paper-2: #e0f2fe; /* Azul */
-    --paper-3: #dcfce7; /* Verde */
-    --paper-4: #fce7f3; /* Rosa */
-    --paper-5: #f3e8ff; /* Roxo */
-    --paper-6: #ffedd5; /* Laranja */
+    --paper-1: #fef9c3; 
+    --paper-2: #e0f2fe; 
+    --paper-3: #dcfce7; 
+    --paper-4: #fce7f3; 
+    --paper-5: #f3e8ff; 
+    --paper-6: #ffedd5; 
 }
 
 body {
@@ -24,6 +24,8 @@ body {
     color: var(--text-dark);
     margin: 0;
     padding: 20px 20px 60px;
+    /* Adicionamos uma largura mínima para garantir que nada amasse */
+    min-width: 1050px; 
 }
 
 h1 {
@@ -70,7 +72,6 @@ select {
     position: relative;
 }
 
-/* Detalhe do apagador/canetas no quadro */
 .board-container::after {
     content: '';
     position: absolute;
@@ -161,36 +162,31 @@ tr:has(.btn-remover:hover) {
     font-size: 1.8rem;
 }
 
-/* LADO A LADO NO DESKTOP */
+/* LADO A LADO SEMPRE (MESMO NO MOBILE) */
 #dias-container {
     display: flex;
-    flex-wrap: nowrap; /* Impede que quebrem linha no PC */
+    flex-wrap: nowrap;
     gap: 15px;
     justify-content: space-between;
     align-items: stretch;
     max-width: 1200px;
     margin: 0 auto;
-    overflow-x: auto; /* Adiciona rolagem suave se a tela ficar pequena */
-    padding-bottom: 10px;
 }
 
 .paper-card {
-    flex: 1 1 0px; /* Força todas as folhas a terem a mesma largura base */
-    min-width: 160px; /* Largura mínima antes de criar rolagem */
+    flex: 1 1 0px; 
+    min-width: 160px;
     position: relative;
-    padding: 15px 10px 15px 35px; /* Espaço para a margem vermelha */
+    padding: 15px 10px 15px 35px;
     border-radius: 2px 12px 12px 2px;
     box-shadow: 3px 5px 15px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
-    
-    /* Pautas do caderno */
     background-image: linear-gradient(#cbd5e1 1px, transparent 1px);
     background-size: 100% 32px;
     background-position: 0 45px;
 }
 
-/* Margem vermelha do caderno */
 .paper-card::before {
     content: '';
     position: absolute;
@@ -271,21 +267,4 @@ tr:has(.btn-remover:hover) {
     width: 100%;
 }
 
-/* --- RESPONSIVIDADE (CELULARES) --- */
-@media (max-width: 900px) {
-    #dias-container {
-        flex-direction: column; /* Empilha as folhas no celular */
-        overflow-x: hidden;
-    }
-    .paper-card {
-        width: 100%; /* Ocupa 100% da tela no celular */
-        min-height: 200px;
-    }
-    .header-controls { flex-direction: column; gap: 15px; }
-    .board-container { border-width: 8px; }
-    table, thead, tbody, th, td, tr { display: block; }
-    thead tr { position: absolute; top: -9999px; left: -9999px; }
-    tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; padding: 10px; }
-    td { border: none; position: relative; padding-left: 50%; text-align: right; }
-    td:before { position: absolute; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; font-weight: bold; text-align: left; content: attr(data-label); }
-}
+/* Removido o @media de celular. Agora ele força a visão desktop! */
