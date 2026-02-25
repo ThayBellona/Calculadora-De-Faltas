@@ -1,228 +1,291 @@
+/* Importação das fontes */
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  --bg-color: #f6f7fb;
-  --primary: #55cede;
-  --accent: #f0f0ff;
-  --text: #2c2c2c;
-  --danger: #ff5c5c;
+    --bg-site: #e8eef2; /* Fundo claro e agradável */
+    --board-frame: #64748b; /* Cinza metálico do quadro */
+    --primary: #2563eb;
+    --text-dark: #1e293b;
+    --danger: #ef4444;
+    --danger-bg: #fee2e2;
+    
+    /* Cores das folhas de caderno */
+    --paper-1: #fef9c3; /* Amarelo */
+    --paper-2: #e0f2fe; /* Azul */
+    --paper-3: #dcfce7; /* Verde */
+    --paper-4: #fce7f3; /* Rosa */
+    --paper-5: #f3e8ff; /* Roxo */
+    --paper-6: #ffedd5; /* Laranja */
 }
 
 body {
-  font-family: "Inter", sans-serif;
-  background-color: var(--bg-color);
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-site);
+    color: var(--text-dark);
+    margin: 0;
+    padding: 20px 20px 60px;
 }
 
 h1 {
-  color: var(--primary);
-  margin-bottom: 10px;
-  text-align: center;
-  font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-family: 'Kalam', cursive;
+    text-align: center;
+    font-size: 2.8rem;
+    color: var(--text-dark);
+    margin-bottom: 30px;
+}
+
+/* --- CONTROLES SUPERIORES --- */
+.header-controls {
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+select {
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--primary);
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+/* --- QUADRO BRANCO (TABELA PRINCIPAL) --- */
+.board-container {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    background: white;
+    border: 14px solid var(--board-frame);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 15px 25px rgba(0,0,0,0.1), inset 0 0 10px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+/* Detalhe do apagador/canetas no quadro */
+.board-container::after {
+    content: '';
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 8px;
+    background: #475569;
+    border-radius: 0 0 8px 8px;
 }
 
 table {
-  border-collapse: collapse;
-  width: 95%;
-  max-width: 850px;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
-}
-
-th, td {
-  padding: 10px;
-  text-align: center;
-  font-size: 0.9rem;
+    width: 100%;
+    border-collapse: collapse;
 }
 
 th {
-  background-color: var(--primary);
-  color: white;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  /* --- MUDANÇA IMPORTANTE --- */
-  /* Impede que o cabeçalho quebre linha (ex: "Máx. Permitidas") */
-  white-space: nowrap;
+    font-family: 'Kalam', cursive;
+    font-size: 1.2rem;
+    color: var(--primary);
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-input {
-  width: 80px;
-  padding: 5px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  text-align: center;
-  font-size: 0.9rem;
-  background: #fdfdfd;
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    font-weight: 500;
 }
 
-tr:hover {
-  background-color: var(--accent);
-  transition: 0.2s;
+input[type="number"] {
+    width: 50px;
+    padding: 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    text-align: center;
+    font-family: 'Kalam', cursive;
+    font-size: 1rem;
 }
 
-button {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  margin: 10px 5px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
+/* EFEITO HOVER AO APAGAR */
+tr { transition: background-color 0.2s; }
+tr:has(.btn-remover:hover) {
+    background-color: var(--danger-bg);
 }
 
-button:hover {
-  background-color: #3f4cc3;
+.btn-remover {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: transform 0.2s;
+}
+.btn-remover:hover { transform: scale(1.2); }
+
+/* --- AVISOS --- */
+#avisos {
+    max-width: 1100px;
+    margin: 0 auto 30px;
+    padding: 15px;
+    background: white;
+    border: 2px dashed var(--danger);
+    border-radius: 8px;
+    color: var(--danger);
+    font-family: 'Kalam', cursive;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: none;
+    box-shadow: 2px 4px 10px rgba(0,0,0,0.05);
 }
 
-.remove-btn {
-  background-color: var(--danger);
+/* --- FOLHAS DE CADERNO (HORÁRIOS) --- */
+.schedule-header {
+    max-width: 1200px;
+    margin: 0 auto 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
 }
 
-.remove-btn:hover {
-  background-color: #d94c7a;
+.schedule-header h2 {
+    font-family: 'Kalam', cursive;
+    color: var(--text-dark);
+    margin: 0;
+    font-size: 1.8rem;
 }
 
-.alerta {
-  color: var(--danger);
-  font-weight: 600;
+/* LADO A LADO NO DESKTOP */
+#dias-container {
+    display: flex;
+    flex-wrap: nowrap; /* Impede que quebrem linha no PC */
+    gap: 15px;
+    justify-content: space-between;
+    align-items: stretch;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow-x: auto; /* Adiciona rolagem suave se a tela ficar pequena */
+    padding-bottom: 10px;
 }
 
-.avisos {
-  margin-top: 15px;
-  width: 95%;
-  max-width: 850px;
-  background: #fff2f2;
-  color: var(--danger);
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-weight: 600;
-  display: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-footer {
-  margin-top: 25px;
-  font-size: 0.85rem;
-  color: #666;
-  text-align: center;
-}
-
-/* Calendário */
-.calendar {
-  margin-top: 40px;
-  width: 95%;
-  max-width: 850px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
-  padding: 15px 25px;
-}
-
-.calendar h2 {
-  color: var(--primary);
-  margin-bottom: 10px;
-}
-
-.day {
-  margin-bottom: 10px;
-  padding: 10px;
-  border-left: 4px solid var(--primary);
-  background: var(--accent);
-  border-radius: 8px;
-}
-
-.day strong {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--primary);
-}
-
-.class {
-  display: flex;
-  justify-content: space-between;
-  background: white;
-  margin-bottom: 5px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.class span:last-child {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-/* 📱 Responsividade */
-@media (max-width: 768px) {
-  
-  /* --- AQUI ESTÁ A CORREÇÃO --- */
-  table {
-    display: block; /* Faz a tabela se comportar como um bloco */
-    overflow-x: auto; /* Adiciona a rolagem horizontal */
-    white-space: nowrap; /* Garante que o conteúdo da tabela não quebre linha */
-    border-radius: 10px; /* Mantém o border-radius */
-  }
-
-  th, td {
-    padding: 8px;
-    font-size: 0.8rem;
-    /* Remove o white-space:nowrap das células para permitir quebra de linha se necessário, 
-       mas o 'th' (cabeçalho) continuará sem quebra de linha (definido acima) */
-    white-space: normal; 
-  }
-  
-  /* Garante que o cabeçalho não quebre linha mesmo aqui */
-  th {
-    white-space: nowrap;
-  }
-
-  input {
-    width: 60px;
-  }
-
-  .botoes {
+.paper-card {
+    flex: 1 1 0px; /* Força todas as folhas a terem a mesma largura base */
+    min-width: 160px; /* Largura mínima antes de criar rolagem */
+    position: relative;
+    padding: 15px 10px 15px 35px; /* Espaço para a margem vermelha */
+    border-radius: 2px 12px 12px 2px;
+    box-shadow: 3px 5px 15px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
-    width: 100%;
-    align-items: center;
-  }
-
-  button {
-    width: 90%;
-    font-size: 1rem;
-  }
-
-  .calendar {
-    padding: 15px;
-  }
-
-  .class {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .class span:last-child {
-    margin-top: 3px;
-  }
+    
+    /* Pautas do caderno */
+    background-image: linear-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 100% 32px;
+    background-position: 0 45px;
 }
 
-@media (max-width: 480px) {
-  h1 {
-    font-size: 1.3rem;
-  }
+/* Margem vermelha do caderno */
+.paper-card::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 25px;
+    width: 2px;
+    background-color: #fca5a5;
+}
 
-  .day strong {
+.paper-card.hidden { display: none; }
+
+.paper-card strong {
+    font-family: 'Kalam', cursive;
+    font-size: 1.2rem;
+    color: var(--text-dark);
+    text-align: center;
+    display: block;
+    margin-bottom: 20px;
+    background: var(--paper-bg);
+    padding: 0 5px;
+}
+
+.class-item {
+    position: relative;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    background: rgba(255,255,255,0.4);
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.m-nome {
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: block;
+}
+
+.m-faltas {
+    font-family: 'Kalam', cursive;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.del-aula {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: none; border: none;
+    color: var(--danger); cursor: pointer;
     font-size: 1rem;
-  }
+}
 
-  footer {
-    font-size: 0.75rem;
-  }
+/* --- BOTÕES GERAIS --- */
+.btn {
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-blue { background: var(--primary); color: white; }
+.btn-blue:hover { background: #1d4ed8; }
+
+.btn-outline { background: white; border: 1px solid #cbd5e1; color: var(--text-dark); }
+.btn-outline:hover { background: #f1f5f9; }
+
+.btn-add-aula {
+    margin-top: auto;
+    background: rgba(255,255,255,0.6);
+    border: 1px dashed #94a3b8;
+    font-size: 0.8rem;
+    padding: 4px;
+    width: 100%;
+}
+
+/* --- RESPONSIVIDADE (CELULARES) --- */
+@media (max-width: 900px) {
+    #dias-container {
+        flex-direction: column; /* Empilha as folhas no celular */
+        overflow-x: hidden;
+    }
+    .paper-card {
+        width: 100%; /* Ocupa 100% da tela no celular */
+        min-height: 200px;
+    }
+    .header-controls { flex-direction: column; gap: 15px; }
+    .board-container { border-width: 8px; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead tr { position: absolute; top: -9999px; left: -9999px; }
+    tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; padding: 10px; }
+    td { border: none; position: relative; padding-left: 50%; text-align: right; }
+    td:before { position: absolute; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; font-weight: bold; text-align: left; content: attr(data-label); }
 }

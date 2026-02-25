@@ -1,251 +1,248 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Faltas - Thay Bellona</title>
-  <link rel="stylesheet" href="css/estilo.css">
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
-  <link rel="manifest" href="favicon_io/site.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Grade Escolar 2026</title>
+    <link rel="stylesheet" href="css/estilo.css">
 </head>
 <body>
-  <h1>📘 Calculadora de Faltas - 4º Período</h1>
 
-  <!-- TABELA PRINCIPAL -->
-  <table id="tabela">
-    <thead>
-      <tr>
-        <th>Disciplina</th>
-        <th>Total de Aulas</th>
-        <th>Faltas Atuais</th>
-        <th>Máx. Permitidas</th>
-        <th>Restantes</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <h1>📝 Calculadora de Faltas 2026</h1>
 
-  <div>
-    <button onclick="adicionarMateria()">➕ Adicionar Matéria</button>
-    <button onclick="calcular()">🔄 Calcular</button>
-  </div>
+    <div class="header-controls">
+        <div>
+            <label style="font-weight: bold; margin-right: 5px;">Período:</label>
+            <select id="selectPeriodo" onchange="trocarPeriodo()">
+                <option value="1">1º Período</option>
+                <option value="3">3º Período</option>
+                <option value="5">5º Período</option>
+            </select>
+        </div>
+        <button class="btn btn-outline" onclick="reiniciarDados()">🔄 Resetar Quadro</button>
+    </div>
 
-  <div id="avisos" class="avisos"></div>
+    <div class="board-container">
+        <table id="tabela">
+            <thead>
+                <tr>
+                    <th>Matéria</th>
+                    <th>Aulas</th>
+                    <th>Faltas</th>
+                    <th>Limite</th>
+                    <th>Restam</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-outline" onclick="adicionarMateria()">+ Nova Matéria</button>
+            <button class="btn btn-blue" onclick="calcular()">Calcular Faltas</button>
+        </div>
+    </div>
 
-  <!-- BOTÃO EDITAR/SALVAR CALENDÁRIO -->
-  <div style="margin-top: 20px;">
-    <button id="editarCalendarioBtn" onclick="toggleEdicaoCalendario()">✏️ Editar Calendário</button>
-  </div>
+    <div id="avisos"></div>
 
-  <!-- CALENDÁRIO -->
-  <div class="calendar" style="margin-top:10px;">
-    <h2>🗓️ Aulas do 4º Período</h2>
-    <div id="dias-container"></div>
-  </div>
+    <div class="schedule-header">
+        <h2>Horários da Semana</h2>
+        <button id="editarCalendarioBtn" class="btn btn-outline" onclick="toggleEdicaoCalendario()">✏️ Editar Horarios</button>
+    </div>
 
-  <footer>© 2025 - Calculadora de Faltas feita por Thay Bellona 💜</footer>
+    <div id="dias-container">
+        </div>
 
-  <script>
-    const tabela = document.querySelector("#tabela tbody");
-    const avisos = document.getElementById("avisos");
-    const diasContainer = document.getElementById("dias-container");
-    const diasSemana = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado/Dia Extra"];
-    let calendarioEditavel = false;
+    <script>
+        const tabela = document.querySelector("#tabela tbody");
+        const avisos = document.getElementById("avisos");
+        const diasContainer = document.getElementById("dias-container");
+        const selectPeriodo = document.getElementById("selectPeriodo");
+        const diasSemana = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+        const paperColors = ["var(--paper-1)", "var(--paper-2)", "var(--paper-3)", "var(--paper-4)", "var(--paper-5)", "var(--paper-6)"];
+        let calendarioEditavel = false;
 
-    window.onload = () => {
-      // Matérias
-      const salvoMaterias = JSON.parse(localStorage.getItem("materias")) || [
-        { nome:"Comércio Eletrônico", total:54, faltas:0 },
-        { nome:"Empreendedorismo", total:54, faltas:0 },
-        { nome:"Informática e Sociedade", total:36, faltas:0 },
-        { nome:"Interação Homem-Computador", total:72, faltas:0 },
-        { nome:"Programação Web I", total:108, faltas:0 },
-        { nome:"Redes de Computadores II", total:72, faltas:0 },
-        { nome:"Segurança da Informação", total:72, faltas:0 }
-      ];
-      salvoMaterias.forEach(adicionarLinha);
-
-      // Calendário
-      const salvoCalendario = JSON.parse(localStorage.getItem("calendario")) || {
-        "Segunda-feira":[{materia:"Programação Web I", faltasDia:3},{materia:"Interação Homem-Computador", faltasDia:2}],
-        "Terça-feira":[{materia:"Empreendedorismo", faltasDia:3},{materia:"Redes de Computadores II", faltasDia:2}],
-        "Quarta-feira":[{materia:"Comércio Eletrônico", faltasDia:3},{materia:"Informática e Sociedade", faltasDia:2}],
-        "Quinta-feira":[{materia:"Programação Web I", faltasDia:3},{materia:"Segurança da Informação", faltasDia:2}],
-        "Sexta-feira":[{materia:"Segurança da Informação", faltasDia:2},{materia:"Interação Homem-Computador", faltasDia:1},{materia:"Redes de Computadores II", faltasDia:2}],
-        "Sábado/Dia Extra":[]
-      };
-      carregarCalendario(salvoCalendario);
-      calcular();
-    };
-
-    // --- TABELA PRINCIPAL ---
-    function adicionarLinha(materia) {
-      const linha = document.createElement("tr");
-      linha.innerHTML = `
-        <td contenteditable="true">${materia.nome}</td>
-        <td><input type="number" value="${materia.total}"></td>
-        <td><input type="number" value="${materia.faltas}"></td>
-        <td>—</td>
-        <td>—</td>
-        <td><button onclick="removerMateria(this)">🗑️</button></td>
-      `;
-      tabela.appendChild(linha);
-    }
-
-    function adicionarMateria() {
-      adicionarLinha({nome:"Nova Matéria", total:0, faltas:0});
-      salvarMaterias();
-    }
-
-    function removerMateria(botao) {
-      botao.closest("tr").remove();
-      salvarMaterias();
-    }
-
-    function calcular() {
-      const linhas = tabela.querySelectorAll("tr");
-
-      // Pega calendário direto do DOM (modo edição também)
-      const calendario = {};
-      document.querySelectorAll(".day").forEach(day => {
-        const diaNome = day.querySelector("strong").textContent;
-        const aulas = day.querySelectorAll(".class");
-        calendario[diaNome] = Array.from(aulas).map(aula => ({
-          materia: aula.querySelector("span:first-child").textContent.trim(),
-          faltasDia: parseInt(aula.querySelector("span:nth-child(2)").textContent) || 0
-        }));
-      });
-
-      let mensagens = [];
-
-      linhas.forEach(linha=>{
-        const nome = linha.children[0].textContent.trim();
-        const total = parseFloat(linha.children[1].children[0].value)||0;
-        const faltas = parseFloat(linha.children[2].children[0].value)||0;
-        const maxPermitidas = Math.floor(total*0.25);
-        const restantes = maxPermitidas-faltas;
-
-        linha.children[3].textContent = maxPermitidas;
-        linha.children[4].textContent = restantes>=0?restantes:"⚠️ Reprovado por falta";
-        linha.children[4].classList.toggle("alerta",restantes<0);
-
-        for(const [dia,aulas] of Object.entries(calendario)){
-          aulas.forEach(aula=>{
-            if(aula.materia===nome && restantes-1<=aula.faltasDia){
-              mensagens.push(`⚠️ Se faltar na ${dia}, atingirá o limite em "${nome}".`);
+        const dadosIniciais = {
+            "1": {
+                materias: [{ nome:"Algoritmos", total:72, faltas:0 },{ nome:"Arquitetura de Computadores", total:72, faltas:0 },{ nome:"Inglês Técnico", total:36, faltas:0 },{ nome:"IHC", total:54, faltas:0 },{ nome:"Português Instrumental", total:36, faltas:0 },{ nome:"Matemática Aplicada", total:72, faltas:0 }],
+                calendario: { "Segunda-feira": [{materia:"Algoritmos", faltasDia:3}, {materia:"IHC", faltasDia:2}], "Terça-feira": [{materia:"Arquitetura de Computadores", faltasDia:3}, {materia:"Matemática Aplicada", faltasDia:2}], "Quarta-feira": [{materia:"Algoritmos", faltasDia:3}, {materia:"Matemática Aplicada", faltasDia:2}], "Quinta-feira": [{materia:"Inglês Técnico", faltasDia:3}, {materia:"Arquitetura de Computadores", faltasDia:2}], "Sexta-feira": [{materia:"IHC", faltasDia:2}, {materia:"Português Instrumental", faltasDia:3}], "Sábado": [] }
+            },
+            "3": {
+                materias: [{ nome:"Orientação a Objetos", total:72, faltas:0 },{ nome:"Engenharia de Software II", total:54, faltas:0 },{ nome:"Estatística", total:54, faltas:0 },{ nome:"Redes de Computadores I", total:72, faltas:0 },{ nome:"Banco de Dados II", total:72, faltas:0 },{ nome:"Construção de Página Web II", total:72, faltas:0 }],
+                calendario: { "Segunda-feira": [{materia:"Orientação a Objetos", faltasDia:3}, {materia:"Banco de Dados II", faltasDia:2}], "Terça-feira": [{materia:"Engenharia de Software II", faltasDia:2}, {materia:"Estatística", faltasDia:3}], "Quarta-feira": [{materia:"Orientação a Objetos", faltasDia:3}, {materia:"Banco de Dados II", faltasDia:2}], "Quinta-feira": [{materia:"Redes de Computadores I", faltasDia:3}, {materia:"Construção de Página Web II", faltasDia:2}], "Sexta-feira": [{materia:"Engenharia de Software II", faltasDia:2}, {materia:"Redes de Computadores I", faltasDia:1}, {materia:"Construção de Página Web II", faltasDia:2}], "Sábado": [] }
+            },
+            "5": {
+                materias: [{ nome:"Lab de Desenvolvimento I", total:72, faltas:0 },{ nome:"Metodologia da Pesquisa", total:54, faltas:0 },{ nome:"Programação Web II", total:72, faltas:0 },{ nome:"Desenv. p/ Dispositivos Móveis I", total:72, faltas:0 },{ nome:"Legislação Aplicada", total:36, faltas:0 }],
+                calendario: { "Segunda-feira": [{materia:"Lab de Desenvolvimento I", faltasDia:3}, {materia:"Desenv. p/ Dispositivos Móveis I", faltasDia:2}], "Terça-feira": [{materia:"Metodologia da Pesquisa", faltasDia:4}, {materia:"Legislação Aplicada", faltasDia:1}], "Quarta-feira": [{materia:"Programação Web II", faltasDia:3}, {materia:"Metodologia da Pesquisa", faltasDia:2}], "Quinta-feira": [{materia:"Lab de Desenvolvimento I", faltasDia:3}, {materia:"Legislação Aplicada", faltasDia:2}], "Sexta-feira": [{materia:"Programação Web II", faltasDia:3}, {materia:"Desenv. p/ Dispositivos Móveis I", faltasDia:2}], "Sábado": [] }
             }
-          });
+        };
+
+        window.onload = () => {
+            const p = localStorage.getItem("periodoSelecionado") || "1";
+            selectPeriodo.value = p;
+            const mats = JSON.parse(localStorage.getItem("materias")) || dadosIniciais[p].materias;
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosIniciais[p].calendario;
+            mats.forEach(adicionarLinha);
+            carregarCalendario(cal);
+            calcular();
+        };
+
+        function trocarPeriodo() { 
+            if(confirm("Mudar o período fará o quadro voltar ao padrão. Deseja continuar?")) reiniciarDados(); 
         }
-      });
+        
+        function reiniciarDados() {
+            const p = selectPeriodo.value;
+            localStorage.setItem("periodoSelecionado", p);
+            localStorage.setItem("materias", JSON.stringify(dadosIniciais[p].materias));
+            localStorage.setItem("calendario", JSON.stringify(dadosIniciais[p].calendario));
+            location.reload();
+        }
 
-      avisos.innerHTML = mensagens.join("<br>");
-      avisos.style.display = mensagens.length>0?"block":"none";
-      salvarMaterias();
-    }
+        function adicionarLinha(m) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td data-label="Matéria:" contenteditable="true" oninput="calcular()">${m.nome}</td>
+                <td data-label="Aulas:"><input type="number" value="${m.total}" oninput="calcular()"></td>
+                <td data-label="Faltas:"><input type="number" value="${m.faltas}" oninput="calcular()"></td>
+                <td data-label="Limite:" style="color:#64748b">—</td>
+                <td data-label="Restam:" style="font-weight:700">—</td>
+                <td data-label="Ação:"><button class="btn-remover" onclick="removerMateria(this)" title="Apagar Matéria">🗑️</button></td>
+            `;
+            tabela.appendChild(tr);
+        }
 
-    function salvarMaterias() {
-      const linhas = tabela.querySelectorAll("tr");
-      const materias = Array.from(linhas).map(linha=>({
-        nome:linha.children[0].textContent,
-        total:linha.children[1].children[0].value,
-        faltas:linha.children[2].children[0].value
-      }));
-      localStorage.setItem("materias",JSON.stringify(materias));
-    }
+        function adicionarMateria() { 
+            adicionarLinha({nome:"Nova Matéria", total:0, faltas:0}); 
+            salvarMaterias(); 
+        }
+        
+        function removerMateria(b) { 
+            b.closest("tr").remove(); 
+            salvarMaterias(); 
+            calcular(); 
+        }
 
-    tabela.addEventListener("input",salvarMaterias);
+        function calcular() {
+            const linhas = tabela.querySelectorAll("tr");
+            const cal = JSON.parse(localStorage.getItem("calendario"));
+            let msgs = [];
+            linhas.forEach(l => {
+                const n = l.children[0].textContent.trim();
+                const t = parseFloat(l.children[1].children[0].value) || 0;
+                const f = parseFloat(l.children[2].children[0].value) || 0;
+                const max = Math.floor(t * 0.25);
+                const rest = max - f;
+                l.children[3].textContent = max;
+                l.children[4].textContent = rest >= 0 ? rest : "REPROVADO";
+                l.children[4].style.color = rest < 0 ? "var(--danger)" : "#059669";
+                if(cal) {
+                    for(const [dia, aulas] of Object.entries(cal)) {
+                        aulas.forEach(a => {
+                            if(a.materia.toLowerCase() === n.toLowerCase() && rest > 0 && rest <= a.faltasDia) {
+                                msgs.push(`🚨 Cuidado: Se faltar na ${dia}, estoura o limite em ${n}!`);
+                            }
+                        });
+                    }
+                }
+            });
+            avisos.innerHTML = msgs.map(m => `<div>${m}</div>`).join("");
+            avisos.style.display = msgs.length > 0 ? "block" : "none";
+            salvarMaterias();
+        }
 
-    // --- CALENDÁRIO ---
-    function carregarCalendario(calendario){
-      diasContainer.innerHTML = "";
-      diasSemana.forEach(dia=>{
-        const dayDiv = document.createElement("div");
-        dayDiv.className="day";
-        dayDiv.innerHTML = `<strong>${dia}</strong>`;
+        function salvarMaterias() {
+            const mats = Array.from(tabela.querySelectorAll("tr")).map(l => ({
+                nome: l.children[0].textContent,
+                total: l.children[1].children[0].value,
+                faltas: l.children[2].children[0].value
+            }));
+            localStorage.setItem("materias", JSON.stringify(mats));
+        }
 
-        const aulas = calendario[dia]||[];
-        aulas.forEach((aula,i)=>{
-          const aulaDiv = document.createElement("div");
-          aulaDiv.className="class";
-          aulaDiv.innerHTML = `
-            <span>${aula.materia}</span>
-            <span>${aula.faltasDia} faltas</span>
-            <button onclick="removerAula('${dia}',${i})">🗑️</button>
-          `;
-          dayDiv.appendChild(aulaDiv);
-        });
+        function carregarCalendario(cal) {
+            diasContainer.innerHTML = "";
+            diasSemana.forEach((dia, index) => {
+                const div = document.createElement("div");
+                div.className = "paper-card";
+                div.dataset.dia = dia;
+                div.style.setProperty('--paper-bg', paperColors[index]);
+                div.style.backgroundColor = 'var(--paper-bg)';
 
-        const btnAdd = document.createElement("button");
-        btnAdd.textContent = "➕ Adicionar Aula";
-        btnAdd.onclick=()=>adicionarAula(dia);
-        dayDiv.appendChild(btnAdd);
+                const aulas = cal[dia] || [];
+                // Lógica do sábado invisível
+                if (dia === "Sábado" && aulas.length === 0 && !calendarioEditavel) div.classList.add("hidden");
 
-        diasContainer.appendChild(dayDiv);
-      });
+                div.innerHTML = `<strong>${dia.split('-')[0]}</strong>`;
+                
+                aulas.forEach((a, i) => {
+                    const aDiv = document.createElement("div");
+                    aDiv.className = "class-item";
+                    aDiv.innerHTML = `
+                        <span class="m-nome">${a.materia}</span>
+                        <span class="m-faltas">${a.faltasDia} aulas</span>
+                        <button onclick="removerAula('${dia}',${i})" class="del-aula" style="display:none;" title="Remover">✕</button>
+                    `;
+                    div.appendChild(aDiv);
+                });
+                
+                const b = document.createElement("button");
+                b.className = "btn btn-add-aula";
+                b.textContent = "+ Aula";
+                b.style.display = "none";
+                b.onclick = () => adicionarAula(dia);
+                div.appendChild(b);
+                
+                diasContainer.appendChild(div);
+            });
+        }
 
-      // Inicialmente modo leitura
-      setCalendarioModoEdicao(false);
-    }
+        function toggleEdicaoCalendario() {
+            calendarioEditavel = !calendarioEditavel;
+            const b = document.getElementById("editarCalendarioBtn");
+            b.textContent = calendarioEditavel ? "💾 Salvar Folhas" : "✏️ Editar Folhas";
+            b.className = calendarioEditavel ? "btn btn-blue" : "btn btn-outline";
+            
+            const sabado = document.querySelector('[data-dia="Sábado"]');
+            if (calendarioEditavel && sabado) sabado.classList.remove("hidden");
+            
+            document.querySelectorAll(".del-aula, .btn-add-aula").forEach(x => x.style.display = calendarioEditavel ? "block" : "none");
+            document.querySelectorAll(".m-nome, .m-faltas").forEach(x => x.contentEditable = calendarioEditavel);
+            
+            if(!calendarioEditavel) { 
+                salvarCalNoStorage(); 
+                const cal = JSON.parse(localStorage.getItem("calendario"));
+                carregarCalendario(cal); 
+                calcular(); 
+            }
+        }
 
-    function toggleEdicaoCalendario(){
-      calendarioEditavel = !calendarioEditavel;
-      setCalendarioModoEdicao(calendarioEditavel);
-      document.getElementById("editarCalendarioBtn").textContent =
-        calendarioEditavel?"💾 Salvar Calendário":"✏️ Editar Calendário";
-      if(!calendarioEditavel) {
-        salvarCalendario();
-        calcular(); // recalcula avisos ao salvar
-      }
-    }
+        function adicionarAula(dia) {
+            const cal = JSON.parse(localStorage.getItem("calendario"));
+            cal[dia].push({materia: "Nova Matéria", faltasDia: 1});
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            carregarCalendario(cal);
+            calendarioEditavel = false; toggleEdicaoCalendario();
+        }
 
-    function setCalendarioModoEdicao(editavel){
-      const dias = document.querySelectorAll(".day");
-      dias.forEach(day=>{
-        const btnAdd = day.querySelector("button");
-        const aulas = day.querySelectorAll(".class");
-        aulas.forEach(aula=>{
-          const span = aula.querySelector("span:first-child");
-          const inputFaltas = aula.querySelector("span:nth-child(2)");
-          const btnDel = aula.querySelector("button");
-          span.contentEditable = editavel;
-          inputFaltas.contentEditable = editavel;
-          btnDel.style.display = editavel?"inline":"none";
-        });
-        if(btnAdd) btnAdd.style.display = editavel?"inline-block":"none";
-      });
-    }
+        function removerAula(dia, i) {
+            const cal = JSON.parse(localStorage.getItem("calendario"));
+            cal[dia].splice(i, 1);
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            carregarCalendario(cal);
+            calendarioEditavel = false; toggleEdicaoCalendario();
+        }
 
-    function adicionarAula(dia){
-      const calendario = JSON.parse(localStorage.getItem("calendario"))||{};
-      if(!calendario[dia]) calendario[dia]=[];
-      calendario[dia].push({materia:"Nova Matéria", faltasDia:0});
-      localStorage.setItem("calendario",JSON.stringify(calendario));
-      carregarCalendario(calendario);
-    }
-
-    function removerAula(dia,index){
-      const calendario = JSON.parse(localStorage.getItem("calendario"))||{};
-      calendario[dia].splice(index,1);
-      localStorage.setItem("calendario",JSON.stringify(calendario));
-      carregarCalendario(calendario);
-    }
-
-    function salvarCalendario(){
-      const dias = document.querySelectorAll(".day");
-      const calendario = {};
-      dias.forEach(day=>{
-        const diaNome = day.querySelector("strong").textContent;
-        const aulas = day.querySelectorAll(".class");
-        calendario[diaNome] = Array.from(aulas).map(aula=>({
-          materia:aula.querySelector("span:first-child").textContent.trim(),
-          faltasDia: parseInt(aula.querySelector("span:nth-child(2)").textContent)||0
-        }));
-      });
-      localStorage.setItem("calendario",JSON.stringify(calendario));
-    }
-  </script>
+        function salvarCalNoStorage() {
+            const cal = {};
+            document.querySelectorAll(".paper-card").forEach(d => {
+                const dia = d.dataset.dia;
+                cal[dia] = Array.from(d.querySelectorAll(".class-item")).map(a => ({
+                    materia: a.querySelector(".m-nome").textContent.trim(),
+                    faltasDia: parseInt(a.querySelector(".m-faltas").textContent.replace(/\D/g,'')) || 0
+                }));
+            });
+            localStorage.setItem("calendario", JSON.stringify(cal));
+        }
+    </script>
 </body>
 </html>
