@@ -2,13 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1200">
-    <title>Calculadora de faltas 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Falta 2026</title>
     <link rel="stylesheet" href="css/estilo.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
 </head>
 <body>
 
-    <h1>📝 Calculadora de faltas 2026</h1>
+    <h1>📝 Calculadora de Falta 2026</h1>
 
     <div class="header-controls">
         <div>
@@ -23,20 +27,23 @@
     </div>
 
     <div class="board-container">
-        <table id="tabela">
-            <thead>
-                <tr>
-                    <th>Matéria</th>
-                    <th>Aulas</th>
-                    <th>Faltas</th>
-                    <th>Limite</th>
-                    <th>Restam</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <div class="table-responsive">
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>Matéria</th>
+                        <th>Aulas</th>
+                        <th>Faltas</th>
+                        <th>Limite</th>
+                        <th>Restam</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-outline" onclick="adicionarMateria()">+ Nova Matéria</button>
             <button class="btn btn-blue" onclick="calcular()">Calcular Faltas</button>
         </div>
