@@ -3,8 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Grade Escolar 2026</title>
+    <title>Calculadora de Falta 2026</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+    
     <link rel="stylesheet" href="css/estilo.css">
+    
     <style>
         /* Estilos adicionais para o Modo Simulação */
         .btn-simular {
@@ -26,7 +32,7 @@
         }
 
         .falta-simulada {
-            color: #d97706 !important; /* Laranja/Âmbar para destacar a simulação */
+            color: #d97706 !important;
             font-weight: bold;
             background-color: #fef3c7;
         }
@@ -53,7 +59,7 @@
 </head>
 <body>
 
-    <h1>📝 Minha Grade Escolar 2026</h1>
+    <h1>📝 Calculadora de Falta 2026</h1>
 
     <div class="header-controls">
         <div>
@@ -122,7 +128,7 @@
         
         let calendarioEditavel = false;
         let modoSimulacaoAtivo = false;
-        let estadoAntesSimulacao = []; // Guarda os valores reais antes de simular
+        let estadoAntesSimulacao = [];
 
         const dadosIniciais = {
             "1": {
@@ -208,7 +214,6 @@
                 l.children[3].textContent = max;
                 l.children[4].textContent = rest >= 0 ? rest : "REPROVADO";
                 
-                // Se estiver no vermelho, avisa na tabela. Se estiver simulando, a cor é mais suave pra não assustar.
                 l.children[4].style.color = rest < 0 ? "var(--danger)" : "#059669";
                 
                 if(cal && !modoSimulacaoAtivo) {
@@ -230,7 +235,7 @@
         }
 
         function salvarMaterias() {
-            if(modoSimulacaoAtivo) return; // Não salva no localStorage se for só simulação
+            if(modoSimulacaoAtivo) return; 
             const mats = Array.from(tabela.querySelectorAll("tr")).map(l => ({
                 nome: l.children[0].textContent,
                 total: l.children[1].children[0].value,
@@ -297,42 +302,35 @@
             if (aulasDoDia.length === 0) return;
 
             modoSimulacaoAtivo = true;
-            estadoAntesSimulacao = []; // Limpa o estado anterior
+            estadoAntesSimulacao = [];
 
-            // Esconde os avisos normais para focar na simulação
             avisos.style.display = "none";
 
-            // Destaca o post-it
             cardPostit.classList.add("simulando");
 
-            // Mostra a barra de controle
             textoSimulacao.textContent = `👀 Simulando: O que acontece se eu faltar na ${dia.split('-')[0]}?`;
             barraSimulacao.style.display = "flex";
 
-            // Aplica as faltas na tabela
             const linhas = tabela.querySelectorAll("tr");
             linhas.forEach(linha => {
                 const nomeMateria = linha.children[0].textContent.trim();
                 const inputFalta = linha.children[2].querySelector("input");
                 const faltasOriginais = parseFloat(inputFalta.value) || 0;
                 
-                // Guarda o estado original para poder cancelar depois
                 estadoAntesSimulacao.push({ linha: linha, valorOriginal: faltasOriginais });
 
                 aulasDoDia.forEach(aulaDia => {
                     if (nomeMateria.toLowerCase() === aulaDia.materia.toLowerCase()) {
                         inputFalta.value = faltasOriginais + aulaDia.faltasDia;
-                        inputFalta.classList.add("falta-simulada"); // Destaca o input
+                        inputFalta.classList.add("falta-simulada"); 
                     }
                 });
             });
 
-            // Recalcula a tabela apenas visualmente (sem salvar no localStorage)
             calcular();
         }
 
         function cancelarSimulacao() {
-            // Restaura os valores originais
             estadoAntesSimulacao.forEach(item => {
                 const inputFalta = item.linha.children[2].querySelector("input");
                 inputFalta.value = item.valorOriginal;
@@ -343,7 +341,6 @@
         }
 
         function salvarSimulacao() {
-            // Remove as classes de destaque visual, mas mantém os valores
             const linhas = tabela.querySelectorAll("tr");
             linhas.forEach(linha => {
                 const inputFalta = linha.children[2].querySelector("input");
@@ -351,8 +348,8 @@
             });
 
             encerrarModoSimulacao();
-            salvarMaterias(); // Agora sim salva no localStorage
-            calcular(); // Recalcula e mostra os avisos reais
+            salvarMaterias(); 
+            calcular(); 
         }
 
         function encerrarModoSimulacao() {
@@ -360,11 +357,10 @@
             estadoAntesSimulacao = [];
             barraSimulacao.style.display = "none";
             
-            // Tira o destaque do post-it
             const postitDestacado = document.querySelector(".postit.simulando, .paper-card.simulando");
             if(postitDestacado) postitDestacado.classList.remove("simulando");
             
-            calcular(); // Restaura os avisos normais
+            calcular(); 
         }
 
         // --- FIM DO SISTEMA DE SIMULAÇÃO ---
@@ -413,9 +409,6 @@
             document.querySelectorAll(".paper-card").forEach(d => {
                 const dia = d.dataset.dia;
                 cal[dia] = Array.from(d.querySelectorAll(".class-item")).map(a => {
-                    const textoCompleto = a.innerText.replace('✕', '').trim();
-                    const partes = textoCompleto.split('aulas');
-                    // Extrai o nome e as faltas de forma mais segura
                     const spanNome = a.querySelector('.m-nome').innerText;
                     const spanFaltas = a.querySelector('.m-faltas').innerText;
                     return {
