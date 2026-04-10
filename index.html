@@ -9,6 +9,21 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
     <link rel="manifest" href="favicon_io/site.webmanifest">
+    <style>
+        /* CSS extra apenas para o botão de simular falta ficar bonito no card */
+        .btn-simular {
+            margin-top: auto; /* Empurra pro final do post-it */
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #94a3b8;
+            font-size: 0.8rem;
+            padding: 6px;
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-simular:hover {
+            background: #cbd5e1;
+        }
+    </style>
 </head>
 <body>
 
@@ -68,7 +83,7 @@
         const paperColors = ["var(--paper-1)", "var(--paper-2)", "var(--paper-3)", "var(--paper-4)", "var(--paper-5)", "var(--paper-6)"];
         let calendarioEditavel = false;
 
-     const dadosIniciais = {
+        const dadosIniciais = {
             "1": {
                 materias: [
                     { nome:"Algoritmos", total:72, faltas:0 },
@@ -196,7 +211,6 @@
                 div.style.backgroundColor = 'var(--paper-bg)';
 
                 const aulas = cal[dia] || [];
-                // Lógica do sábado invisível
                 if (dia === "Sábado" && aulas.length === 0 && !calendarioEditavel) div.classList.add("hidden");
 
                 div.innerHTML = `<strong>${dia.split('-')[0]}</strong>`;
@@ -212,27 +226,79 @@
                     div.appendChild(aDiv);
                 });
                 
-                const b = document.createElement("button");
-                b.className = "btn btn-add-aula";
-                b.textContent = "+ Aula";
-                b.style.display = "none";
-                b.onclick = () => adicionarAula(dia);
-                div.appendChild(b);
+                // Botão de Adicionar Aula (Modo Edição)
+                const bAdd = document.createElement("button");
+                bAdd.className = "btn btn-add-aula";
+                bAdd.textContent = "+ Aula";
+                bAdd.style.display = "none";
+                bAdd.onclick = () => adicionarAula(dia);
+                
+                // Botão de Simular Falta (Modo Normal)
+                const bSimular = document.createElement("button");
+                bSimular.className = "btn btn-simular";
+                bSimular.textContent = "📅 Faltar Hoje";
+                bSimular.onclick = () => simularFaltaDia(dia);
+                // Esconde se não houver aulas no dia
+                if (aulas.length === 0) bSimular.style.display = "none";
+
+                div.appendChild(bAdd);
+                div.appendChild(bSimular);
                 
                 diasContainer.appendChild(div);
             });
         }
 
+        // --- NOVA FUNÇÃO: SIMULAR FALTA NO DIA ---
+        function simularFaltaDia(dia) {
+            const cal = JSON.parse(localStorage.getItem("calendario"));
+            const aulasDoDia = cal[dia] || [];
+
+            if (aulasDoDia.length === 0) return;
+
+            let mensagem = `Se você faltar na ${dia}, receberá:\n\n`;
+            aulasDoDia.forEach(aula => {
+                mensagem += `• ${aula.faltasDia} falta(s) em ${aula.materia}\n`;
+            });
+            mensagem += `\nDeseja adicionar essas faltas à sua tabela oficial?`;
+
+            if (confirm(mensagem)) {
+                aplicarFaltasAoQuadro(aulasDoDia);
+            }
+        }
+
+        // --- NOVA FUNÇÃO: APLICAR FALTAS NA TABELA ---
+        function aplicarFaltasAoQuadro(aulasDoDia) {
+            const linhas = tabela.querySelectorAll("tr");
+
+            aulasDoDia.forEach(aulaDia => {
+                linhas.forEach(linha => {
+                    const nomeMateria = linha.children[0].textContent.trim();
+                    // Se o nome no post-it for igual ao da tabela, adiciona a falta
+                    if (nomeMateria.toLowerCase() === aulaDia.materia.toLowerCase()) {
+                        const inputFalta = linha.children[2].querySelector("input");
+                        let faltasAtuais = parseFloat(inputFalta.value) || 0;
+                        inputFalta.value = faltasAtuais + aulaDia.faltasDia;
+                    }
+                });
+            });
+
+            salvarMaterias();
+            calcular();
+        }
+
         function toggleEdicaoCalendario() {
             calendarioEditavel = !calendarioEditavel;
             const b = document.getElementById("editarCalendarioBtn");
-            b.textContent = calendarioEditavel ? "💾 Salvar Folhas" : "✏️ Editar Folhas";
+            b.textContent = calendarioEditavel ? "💾 Salvar Folhas" : "✏️ Editar Horários";
             b.className = calendarioEditavel ? "btn btn-blue" : "btn btn-outline";
             
             const sabado = document.querySelector('[data-dia="Sábado"]');
             if (calendarioEditavel && sabado) sabado.classList.remove("hidden");
             
+            // Esconde/Mostra botões dependendo do modo
             document.querySelectorAll(".del-aula, .btn-add-aula").forEach(x => x.style.display = calendarioEditavel ? "block" : "none");
+            document.querySelectorAll(".btn-simular").forEach(x => x.style.display = calendarioEditavel ? "none" : "flex");
+            
             document.querySelectorAll(".m-nome, .m-faltas").forEach(x => x.contentEditable = calendarioEditavel);
             
             if(!calendarioEditavel) { 
@@ -272,6 +338,4 @@
         }
     </script>
 </body>
-
 </html>
-
