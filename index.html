@@ -301,7 +301,76 @@
 
         function trocarPeriodo() { reiniciarDados(); }
 
-        function toggleEdicaoCalendario() { alert("Para editar a grade permanentemente, use a versão local do arquivo ou aguarde atualizações!"); }
+        function toggleEdicaoCalendario() {
+            if(modoSimulacaoAtivo) { alert("Cancele a simulação antes."); return; }
+            
+            calendarioEditavel = !calendarioEditavel;
+            const b = document.getElementById("editarCalendarioBtn");
+            b.textContent = calendarioEditavel ? "💾 Salvar Folhas" : "✏️ Editar Folhas";
+            b.className = calendarioEditavel ? "btn btn-blue" : "btn btn-outline";
+            
+            // Reativa a exibição do sábado e dos botões de adicionar/remover
+            const postits = document.querySelectorAll(".paper-card");
+            postits.forEach(p => {
+                p.style.display = "flex"; // Força aparecer
+                const bAdd = p.querySelector(".btn-add-aula");
+                const bRem = p.querySelectorAll(".del-aula");
+                if(bAdd) bAdd.style.display = calendarioEditavel ? "block" : "none";
+                bRem.forEach(btn => btn.style.display = calendarioEditavel ? "block" : "none");
+            });
+
+            document.querySelectorAll(".m-nome").forEach(x => x.contentEditable = calendarioEditavel);
+        }
+
+        // 2. CORRIGIR A ADIÇÃO DE AULA
+        function adicionarAula(dia) {
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[selectPeriodo.value].calendario;
+            cal[dia].push({materia: "Nova Matéria", faltasDia: 1});
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            location.reload(); // Recarrega para aplicar as mudanças
+        }
+
+        // 3. CORRIGIR A REMOÇÃO DE AULA
+        function removerAula(dia, i) {
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[selectPeriodo.value].calendario;
+            cal[dia].splice(i, 1);
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            location.reload();
+        }
+
+        // 4. ATUALIZAR O CARREGAMENTO PARA MOSTRAR OS BOTÕES
+        function carregarCalendario(cal) {
+            diasContainer.innerHTML = "";
+            diasSemana.forEach((dia, i) => {
+                const div = document.createElement("div");
+                div.className = "paper-card";
+                div.dataset.dia = dia;
+                div.style.backgroundColor = paperColors[i];
+                
+                div.innerHTML = `<strong>${dia.split('-')[0]}</strong>`;
+                (cal[dia] || []).forEach((a, index) => {
+                    div.innerHTML += `
+                        <div class="class-item">
+                            <span class="m-nome">${a.materia}</span>
+                            <span class="m-faltas">${a.faltasDia} aulas</span>
+                            <button class="del-aula" style="display:none;" onclick="removerAula('${dia}', ${index})">✕</button>
+                        </div>`;
+                });
+                
+                const bAdd = document.createElement("button");
+                bAdd.className = "btn btn-add-aula"; bAdd.textContent = "+ Aula";
+                bAdd.style.display = "none";
+                bAdd.onclick = () => adicionarAula(dia);
+                
+                const bSim = document.createElement("button");
+                bSim.className = "btn-simular"; bSim.textContent = "📅 Faltar Hoje";
+                bSim.onclick = () => iniciarSimulacao(dia, div);
+                
+                div.appendChild(bAdd);
+                div.appendChild(bSim);
+                diasContainer.appendChild(div);
+            });
+        }
         
         function adicionarMateria() { 
             adicionarLinha({nome:"Nova Matéria", total:0, faltas:0}); 
