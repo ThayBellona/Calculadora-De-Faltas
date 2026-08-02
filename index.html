@@ -1,66 +1,389 @@
-// O seu link exato do Boletim usando a sua matrícula
-const LINK_DO_SEU_BOLETIM = "https://suap.ifac.edu.br/edu/aluno/20241CRB12697480026/?tab=boletim";
-
-document.getElementById('btnExtrair').addEventListener('click', () => {
-    const divMensagem = document.getElementById('mensagem');
-    divMensagem.textContent = "Analisando...";
-
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        const abaAtual = tabs[0];
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Falta 2026</title>
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+    
+    <link rel="stylesheet" href="css/estilo.css">
+    
+    <style>
+        /* Estilos do Modo Simulação */
+        .btn-simular {
+            margin-top: auto;
+            background: rgba(255,255,255,0.6);
+            border: 1px dashed #94a3b8;
+            font-size: 0.8rem;
+            padding: 6px;
+            width: 100%;
+            justify-content: center;
+            color: #475569;
+        }
+        .btn-simular:hover { background: #cbd5e1; color: #1e293b; }
         
-        // 1. Verifica se você está na página exata do boletim
-        if(!abaAtual.url.includes("tab=boletim")) {
-            divMensagem.textContent = "Redirecionando para o seu Boletim...";
-            // Se não estiver, a extensão abre a página para você automaticamente!
-            chrome.tabs.create({ url: LINK_DO_SEU_BOLETIM });
-            return;
+        .paper-card.simulando {
+            transform: scale(1.05) rotate(0deg);
+            z-index: 20;
+            box-shadow: 0 0 0 4px var(--primary), 5px 5px 20px rgba(0,0,0,0.2);
         }
 
-        // 2. Se já estiver no boletim, injeta o código para extrair os dados
-        divMensagem.textContent = "Lendo dados do SUAP...";
+        .falta-simulada {
+            color: #d97706 !important;
+            font-weight: bold;
+            background-color: #fef3c7;
+        }
+
+        #barra-simulacao {
+            display: none;
+            background: #fffbeb;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        #barra-simulacao p { margin: 0; font-weight: 600; color: #b45309; font-family: 'Kalam', cursive; font-size: 1.1rem;}
+    </style>
+</head>
+<body>
+
+    <h1>📝 Calculadora de Falta 2026</h1>
+
+    <div class="header-controls">
+        <div>
+            <label style="font-weight: bold; margin-right: 5px;">Período:</label>
+            <select id="selectPeriodo" onchange="trocarPeriodo()">
+                <option value="1">1º Período</option>
+                <option value="3">3º Período</option>
+                <option value="5">5º Período</option>
+                <!-- NOVA OPÇÃO: Adicionando o 6º período ao menu suspenso -->
+                <option value="6">6º Período</option>
+            </select>
+        </div>
+        <button class="btn btn-outline" onclick="reiniciarDados()">🔄 Resetar Quadro</button>
+    </div>
+
+    <div class="board-container">
+        <div id="barra-simulacao">
+            <p id="texto-simulacao">Modo Simulação Ativo!</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline" onclick="cancelarSimulacao()" style="font-size: 0.8rem;">Cancelar</button>
+                <button class="btn btn-blue" onclick="salvarSimulacao()" style="background: #f59e0b; border:none; font-size: 0.8rem;">Salvar Faltas</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>Matéria</th>
+                        <th>Aulas</th>
+                        <th>Faltas</th>
+                        <th>Limite</th>
+                        <th>Restam</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
         
-        chrome.scripting.executeScript({
-            target: {tabId: abaAtual.id},
-            function: extrairDadosDoSuap
-        }, (resultados) => {
-            if(resultados && resultados[0] && resultados[0].result) {
-                const dados = resultados[0].result;
-                
-                if(dados.length === 0) {
-                    divMensagem.textContent = "Nenhuma falta encontrada. Tem certeza que o boletim carregou?";
-                    return;
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-outline" onclick="adicionarMateria()">+ Nova Matéria</button>
+            <button class="btn btn-blue" onclick="calcular()">Calcular Faltas</button>
+        </div>
+    </div>
+
+    <div id="avisos"></div>
+
+    <div class="schedule-header">
+        <h2>Horários da Semana</h2>
+        <button id="editarCalendarioBtn" class="btn btn-outline" onclick="toggleEdicaoCalendario()">✏️ Editar Folhas</button>
+    </div>
+
+    <div id="dias-container"></div>
+
+    <script>
+        const tabela = document.querySelector("#tabela tbody");
+        const avisos = document.getElementById("avisos");
+        const diasContainer = document.getElementById("dias-container");
+        const selectPeriodo = document.getElementById("selectPeriodo");
+        const barraSimulacao = document.getElementById("barra-simulacao");
+        const textoSimulacao = document.getElementById("texto-simulacao");
+        
+        const diasSemana = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+        const paperColors = ["#fef9c3", "#e0f2fe", "#dcfce7", "#fce7f3", "#f3e8ff", "#ffedd5"];
+        
+        let calendarioEditavel = false, modoSimulacaoAtivo = false, estadoAntesSimulacao = [];
+
+        // Dados base baseados nas imagens do SUAP e ifac.si
+        const dadosPadrao = {
+            "1": {
+                materias: [
+                    { nome:"Algoritmos", total:72, faltas:0 },
+                    { nome:"Arquitetura de Computadores", total:72, faltas:0 },
+                    { nome:"Inglês Técnico", total:36, faltas:0 },
+                    { nome:"IHC", total:54, faltas:0 },
+                    { nome:"Português Instrumental", total:36, faltas:0 },
+                    { nome:"Matemática Aplicada", total:72, faltas:0 }
+                ],
+                calendario: { "Segunda-feira": [{materia:"Algoritmos", faltasDia:3}, {materia:"IHC", faltasDia:2}], "Terça-feira": [{materia:"Arquitetura de Computadores", faltasDia:3}], "Quarta-feira": [{materia:"Algoritmos", faltasDia:3}], "Quinta-feira": [{materia:"Inglês Técnico", faltasDia:3}], "Sexta-feira": [{materia:"IHC", faltasDia:2}] }
+            },
+            "3": {
+                materias: [
+                    { nome:"Orientação a Objetos", total:72, faltas:0 },
+                    { nome:"Engenharia de Software II", total:54, faltas:0 },
+                    { nome:"Estatística", total:54, faltas:0 },
+                    { nome:"Redes de Computadores I", total:72, faltas:0 },
+                    { nome:"Banco de Dados II", total:72, faltas:0 },
+                    { nome:"Construção de Página Web II", total:72, faltas:0 }
+                ],
+                calendario: { "Segunda-feira": [{materia:"Orientação a Objetos", faltasDia:3}], "Terça-feira": [{materia:"Engenharia de Software II", faltasDia:2}], "Quarta-feira": [{materia:"Orientação a Objetos", faltasDia:3}], "Quinta-feira": [{materia:"Redes de Computadores I", faltasDia:3}], "Sexta-feira": [{materia:"Página Web II", faltasDia:3}] }
+            },
+            "5": {
+                materias: [
+                    { nome:"Desenv. p/ Dispositivos Móveis I", total:72, faltas:0 },
+                    { nome:"Lab de Desenvolvimento I", total:108, faltas:0 },
+                    { nome:"Legislação Aplicada", total:54, faltas:0 },
+                    { nome:"Metodologia da Pesquisa", total:108, faltas:0 },
+                    { nome:"Programação Web II", total:108, faltas:0 }
+                ],
+                calendario: { 
+                    "Segunda-feira": [{materia:"Lab de Desenvolvimento I", faltasDia:3}, {materia:"Desenv. p/ Dispositivos Móveis I", faltasDia:2}], 
+                    "Terça-feira": [{materia:"Metodologia da Pesquisa", faltasDia:4}, {materia:"Legislação Aplicada", faltasDia:1}], 
+                    "Quarta-feira": [{materia:"Programação Web II", faltasDia:3}, {materia:"Metodologia da Pesquisa", faltasDia:2}], 
+                    "Quinta-feira": [{materia:"Lab de Desenvolvimento I", faltasDia:3}, {materia:"Legislação Aplicada", faltasDia:2}], 
+                    "Sexta-feira": [{materia:"Programação Web II", faltasDia:3}, {materia:"Desenv. p/ Dispositivos Móveis I", faltasDia:2}] 
                 }
-
-                divMensagem.textContent = "Enviando para a Calculadora... 🚀";
-
-                // Transforma os dados e abre o SEU site oficial do GitHub
-                const dadosCodificados = encodeURIComponent(JSON.stringify(dados));
-                const urlDestino = `https://thaybellona.github.io/Calculadora-De-Faltas/?importar=${dadosCodificados}`;
-                
-                chrome.tabs.create({ url: urlDestino });
+            },
+            // NOVA CONFIGURAÇÃO: Dados do 6º Período extraídos das imagens
+            "6": {
+                materias: [
+                    { nome:"Desenvolvimento para Dispositivos Móveis II", total:72, faltas:0 },
+                    { nome:"Governança de Tecnologia da Informação", total:72, faltas:0 },
+                    { nome:"Inteligência Artificial", total:54, faltas:0 },
+                    { nome:"Laboratório de Desenvolvimento de Software II", total:108, faltas:5 },
+                    { nome:"Libras", total:54, faltas:0 }
+                ],
+                calendario: { 
+                    "Segunda-feira": [{materia:"Inteligência Artificial", faltasDia:3}], 
+                    "Terça-feira": [{materia:"Laboratório de Desenvolvimento de Software II", faltasDia:3}, {materia:"Desenvolvimento para Dispositivos Móveis II", faltasDia:2}], 
+                    "Quarta-feira": [{materia:"Governança de Tecnologia da Informação", faltasDia:2}, {materia:"Desenvolvimento para Dispositivos Móveis II", faltasDia:2}], 
+                    "Quinta-feira": [{materia:"Libras", faltasDia:3}, {materia:"Governança de Tecnologia da Informação", faltasDia:2}], 
+                    "Sexta-feira": [{materia:"Laboratório de Desenvolvimento de Software II", faltasDia:3}] 
+                }
             }
-        });
-    });
-});
+        };
 
-// A função espiã que roda dentro da página do SUAP
-function extrairDadosDoSuap() {
-    const linhas = document.querySelectorAll('table[summary="Boletim do Aluno"] tbody tr');
-    let extraidas = [];
-    
-    linhas.forEach(tr => {
-        const tdDisc = tr.querySelector('td[headers="th_disciplina"]');
-        const tdFalta = tr.querySelector('td[headers="th_total_faltas"]');
-        
-        if(tdDisc && tdFalta) {
-            let nomeSujo = tdDisc.textContent.trim();
-            // Pega o nome após o hífen
-            let nomeLimpo = nomeSujo.split('-').pop().trim();
-            let qtdFaltas = parseInt(tdFalta.textContent.trim()) || 0;
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const syncData = urlParams.get('sincronizar');
+
+            if (syncData) {
+                try {
+                    const pacote = JSON.parse(decodeURIComponent(syncData));
+                    localStorage.setItem("periodoSelecionado", pacote.periodoSUAP);
+                    localStorage.setItem("materias", JSON.stringify(pacote.materiasAtualizadas));
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch(e) { console.error("Erro sincronia", e); }
+            }
+
+            // ATUALIZAÇÃO: O fallback agora é "6" em vez de "5"
+            const p = localStorage.getItem("periodoSelecionado") || "6";
+            selectPeriodo.value = p;
+            const mats = JSON.parse(localStorage.getItem("materias")) || dadosPadrao[p].materias;
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[p].calendario;
             
-            extraidas.push({ materia: nomeLimpo, faltas: qtdFaltas });
+            tabela.innerHTML = "";
+            mats.forEach(adicionarLinha);
+            carregarCalendario(cal);
+            calcular();
+        };
+
+        function adicionarLinha(m) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td contenteditable="true" oninput="calcular()">${m.nome}</td>
+                <td><input type="number" value="${m.total}" oninput="calcular()"></td>
+                <td><input type="number" value="${m.faltas}" oninput="calcular()"></td>
+                <td style="color:#64748b">—</td><td style="font-weight:700">—</td>
+                <td><button class="btn-remover" onclick="removerMateria(this)">🗑️</button></td>
+            `;
+            tabela.appendChild(tr);
         }
-    });
-    
-    return extraidas;
-}
+
+        function removerMateria(b) { if(!modoSimulacaoAtivo) { b.closest("tr").remove(); salvarMaterias(); calcular(); } }
+
+        function calcular() {
+            const linhas = tabela.querySelectorAll("tr");
+            linhas.forEach(l => {
+                const t = parseFloat(l.children[1].querySelector("input").value) || 0;
+                const f = parseFloat(l.children[2].querySelector("input").value) || 0;
+                const max = Math.floor(t * 0.25);
+                const rest = max - f;
+                l.children[3].textContent = max;
+                l.children[4].textContent = rest >= 0 ? rest : "REPROVADO";
+                l.children[4].style.color = rest < 0 ? "var(--danger)" : "#059669";
+            });
+            salvarMaterias();
+        }
+
+        function carregarCalendario(cal) {
+            diasContainer.innerHTML = "";
+            diasSemana.forEach((dia, i) => {
+                const div = document.createElement("div");
+                div.className = "paper-card";
+                div.dataset.dia = dia;
+                div.style.backgroundColor = paperColors[i];
+                
+                if (dia === "Sábado" && !calendarioEditavel && (!cal[dia] || cal[dia].length === 0)) {
+                    div.style.display = "none";
+                }
+                
+                div.innerHTML = `<strong>${dia.split('-')[0]}</strong>`;
+                
+                const aulasDoDia = cal[dia] || [];
+                aulasDoDia.forEach((a, index) => {
+                    div.innerHTML += `
+                        <div class="class-item">
+                            <span class="m-nome">${a.materia}</span>
+                            <span class="m-faltas">${a.faltasDia} aulas</span>
+                            <button class="del-aula" style="display:${calendarioEditavel ? 'block' : 'none'};" onclick="removerAula('${dia}', ${index})">✕</button>
+                        </div>`;
+                });
+                
+                const bAdd = document.createElement("button");
+                bAdd.className = "btn btn-add-aula"; 
+                bAdd.textContent = "+ Aula";
+                bAdd.style.display = calendarioEditavel ? "block" : "none";
+                bAdd.onclick = () => adicionarAula(dia);
+                
+                const bSim = document.createElement("button");
+                bSim.className = "btn-simular"; 
+                bSim.textContent = "📅 Faltar Hoje";
+                bSim.onclick = () => iniciarSimulacao(dia, div);
+                
+                div.appendChild(bAdd);
+                div.appendChild(bSim);
+                diasContainer.appendChild(div);
+            });
+        }
+
+        function iniciarSimulacao(dia, card) {
+            if(modoSimulacaoAtivo) return;
+            modoSimulacaoAtivo = true;
+            card.classList.add("simulando");
+            barraSimulacao.style.display = "flex";
+            textoSimulacao.textContent = `👀 O que acontece se eu faltar na ${dia}?`;
+            
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[selectPeriodo.value].calendario;
+            const aulasDia = cal[dia] || [];
+            
+            tabela.querySelectorAll("tr").forEach(linha => {
+                const nome = linha.children[0].textContent.trim().toLowerCase();
+                const input = linha.children[2].querySelector("input");
+                estadoAntesSimulacao.push({ input, valor: input.value });
+                
+                aulasDia.forEach(a => {
+                    if(nome.includes(a.materia.toLowerCase()) || a.materia.toLowerCase().includes(nome)) {
+                        input.value = parseInt(input.value) + a.faltasDia;
+                        input.classList.add("falta-simulada");
+                    }
+                });
+            });
+            calcular();
+        }
+
+        function cancelarSimulacao() {
+            estadoAntesSimulacao.forEach(s => { s.input.value = s.valor; s.input.classList.remove("falta-simulada"); });
+            encerrarSim();
+        }
+
+        function salvarSimulacao() {
+            tabela.querySelectorAll("input").forEach(i => i.classList.remove("falta-simulada"));
+            encerrarSim();
+            salvarMaterias();
+        }
+
+        function encerrarSim() {
+            modoSimulacaoAtivo = false; estadoAntesSimulacao = [];
+            barraSimulacao.style.display = "none";
+            document.querySelectorAll(".paper-card").forEach(c => c.classList.remove("simulando"));
+            calcular();
+        }
+
+        function salvarMaterias() {
+            if(modoSimulacaoAtivo) return;
+            const mats = Array.from(tabela.querySelectorAll("tr")).map(l => ({
+                nome: l.children[0].textContent,
+                total: l.children[1].querySelector("input").value,
+                faltas: l.children[2].querySelector("input").value
+            }));
+            localStorage.setItem("materias", JSON.stringify(mats));
+        }
+
+        function reiniciarDados() {
+            const p = selectPeriodo.value;
+            localStorage.setItem("periodoSelecionado", p);
+            localStorage.setItem("materias", JSON.stringify(dadosPadrao[p].materias));
+            localStorage.setItem("calendario", JSON.stringify(dadosPadrao[p].calendario));
+            location.reload();
+        }
+
+        function trocarPeriodo() { reiniciarDados(); }
+
+        function toggleEdicaoCalendario() {
+            if(modoSimulacaoAtivo) { alert("Cancele a simulação antes."); return; }
+            
+            calendarioEditavel = !calendarioEditavel;
+            const b = document.getElementById("editarCalendarioBtn");
+            b.textContent = calendarioEditavel ? "💾 Salvar Folhas" : "✏️ Editar Folhas";
+            b.className = calendarioEditavel ? "btn btn-blue" : "btn btn-outline";
+            
+            const postits = document.querySelectorAll(".paper-card");
+            postits.forEach(p => {
+                p.style.display = "flex";
+                const bAdd = p.querySelector(".btn-add-aula");
+                const bRem = p.querySelectorAll(".del-aula");
+                if(bAdd) bAdd.style.display = calendarioEditavel ? "block" : "none";
+                bRem.forEach(btn => btn.style.display = calendarioEditavel ? "block" : "none");
+            });
+
+            document.querySelectorAll(".m-nome").forEach(x => x.contentEditable = calendarioEditavel);
+        }
+
+       function adicionarAula(dia) {
+            let cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[selectPeriodo.value].calendario;
+            
+            if (!cal[dia]) {
+                cal[dia] = [];
+            }
+            
+            cal[dia].push({materia: "Nova Matéria", faltasDia: 1});
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            location.reload(); 
+        }
+
+        function removerAula(dia, i) {
+            const cal = JSON.parse(localStorage.getItem("calendario")) || dadosPadrao[selectPeriodo.value].calendario;
+            cal[dia].splice(i, 1);
+            localStorage.setItem("calendario", JSON.stringify(cal));
+            location.reload();
+        }
+
+        function adicionarMateria() { 
+            adicionarLinha({nome:"Nova Matéria", total:0, faltas:0}); 
+            salvarMaterias(); 
+        }
+    </script>
+</body>
+</html>
